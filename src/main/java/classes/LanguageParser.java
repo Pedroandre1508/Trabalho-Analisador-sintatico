@@ -25,7 +25,7 @@ public class LanguageParser implements LanguageParserConstants {
         try {
             parser.programa();
         } catch (ParseException e) {
-            output.add(new ErrorStruct("Error parsing the program.\u005cn", e));
+            output.add(new ErrorStruct("Erro parsing programa.\u005cn", e));
         }
         ArrayList<ErrorStruct> tmp = new ArrayList<ErrorStruct>(output);
         output.clear();

@@ -314,7 +314,6 @@ public class Controller {
             if (token.kind == LanguageParserConstants.SIMBOLO_INVALIDO | token.kind == LanguageParserConstants.CONSTANTE_INTEIRA_INVALIDA
             | token.kind == LanguageParserConstants.CONSTANTE_REAL_INVALIDA | token.kind == LanguageParserConstants.CONSTANTE_LITERAL_INVALIDA | token.kind == LanguageParserConstants.IDENTIFICADOR_INVALIDO) {
                 counter++;
-
                 switch (token.kind) {
                     case 60:
                         this.messageTextArea.appendText("\n|Erro: "+token.kind+ " - Simbolo Invalido, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
