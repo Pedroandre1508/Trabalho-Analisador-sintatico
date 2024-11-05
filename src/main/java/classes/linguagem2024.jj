@@ -301,7 +301,13 @@ void declaracao_constantes_variaveis() :
 void constantes_e_variaveis() :
 {}
 {
-    (declaracao_constantes() variaveis_prime() | declaracao_variaveis() constantes_prime())
+    (declaracao_constantes() constantes_e_variaveis_prime() | declaracao_variaveis() constantes_e_variaveis_prime())
+}
+
+void constantes_e_variaveis_prime() :
+{}
+{
+    (declaracao_constantes() constantes_e_variaveis_prime() | declaracao_variaveis() constantes_e_variaveis_prime())?
 }
 
 void declaracao_constantes() :
@@ -322,12 +328,6 @@ void constantes_prime() :
     (constantes())?
 }
 
-void variaveis_prime() :
-{}
-{
-    (declaracao_constantes())?
-}
-
 void declaracao_variaveis() :
 {}
 {
@@ -337,13 +337,13 @@ void declaracao_variaveis() :
 void variaveis() :
 {}
 {
-    tipo() <DOISPONTOS> lista_identificadores() <PONTO> variaveis_lista()
+    tipo() <DOISPONTOS> lista_identificadores() <PONTO> variaveis_prime()
 }
 
-void variaveis_lista() :
+void variaveis_prime() :
 {}
 {
-    (variaveis())*
+    (variaveis())?
 }
 
 void tipo() :

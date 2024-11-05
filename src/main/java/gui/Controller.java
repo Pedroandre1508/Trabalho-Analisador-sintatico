@@ -335,16 +335,59 @@ public class Controller {
     private void analisadorSintatico() {
         ArrayList<AErrorStruct> output = LanguageParser.analisadorSintatico(this.inputTextArea.getText());
         if (output.size() == 0) {
-            this.messageTextArea.appendText("Compilado com sucesso!\n");
+            this.messageTextArea.appendText("\nCompilado com sucesso!\n");
             return;
         }
         this.messageTextArea.appendText("\n");
         this.messageTextArea.appendText("Erro(s) sintaticos encontrados: " + output.size() + "\n");
         for (AErrorStruct err : output) {
-            this.messageTextArea.appendText(err.getMsg() + "\n");
-            this.messageTextArea.appendText("Esperado(s): " + err.expected() + "\n");
+            this.messageTextArea.appendText(err.getMsg());
+            this.messageTextArea.appendText(getExpectedMessages(err.expected()));
             this.messageTextArea.appendText("Linha: " + err.getError().currentToken.beginLine + "; Coluna: " + err.getError().currentToken.endColumn + "\n");
         }
+    }
+    
+    private String getExpectedMessages(String expectedToken) {
+        return getExpectedMessages(new String[]{expectedToken});
+    }
+    
+    private String getExpectedMessages(String[] expectedTokens) {
+        StringBuilder messages = new StringBuilder();
+        for (String token : expectedTokens) {
+            switch (token) {
+                case "<MAKE>":
+                    messages.append("Esperado Make\n");
+                    break;
+                case "<CONST>":
+                case "<VAR>":
+                    messages.append("Esperado uma declaração de variaveis ou constantes\n");
+                    break;
+                case "<END>":
+                    messages.append("Esperado end\n");
+                    break;
+                case "<PONTO>":
+                    messages.append("Esperado .\n");
+                    break;
+                case "<IDENTIFICADOR>":
+                case "<CONSTANTE_INTEIRA>":
+                case "<CONSTANTE_REAL>":
+                case "<CONSTANTE_LITERAL>":
+                case "<TRUE>":
+                case "<FALSE>":
+                    messages.append("Esperado expressao\n");
+                    break;
+                case "<GET>":
+                case "<PUT>":
+                case "<IF>":
+                case "<WHILE>":
+                    messages.append("Esperado lista de comandos\n");
+                    break;
+                default:
+                    messages.append("Esperado ").append(token).append("\n");
+                    break;
+            }
+        }
+        return messages.toString();
     }
 
     public String copySelection() {
