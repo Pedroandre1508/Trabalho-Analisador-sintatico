@@ -11,107 +11,109 @@ public interface LanguageParserConstants {
   /** End of File. */
   int EOF = 0;
   /** RegularExpression Id. */
-  int DO = 14;
+  int NovaLinha = 1;
   /** RegularExpression Id. */
-  int MAKE = 15;
+  int DO = 8;
   /** RegularExpression Id. */
-  int END = 16;
+  int MAKE = 9;
   /** RegularExpression Id. */
-  int CONST = 17;
+  int END = 10;
   /** RegularExpression Id. */
-  int VAR = 18;
+  int CONST = 11;
   /** RegularExpression Id. */
-  int INT = 19;
+  int VAR = 12;
   /** RegularExpression Id. */
-  int REAL = 20;
+  int INT = 13;
   /** RegularExpression Id. */
-  int CHAR = 21;
+  int REAL = 14;
   /** RegularExpression Id. */
-  int BOOL = 22;
+  int CHAR = 15;
   /** RegularExpression Id. */
-  int GET = 23;
+  int BOOL = 16;
   /** RegularExpression Id. */
-  int PUT = 24;
+  int GET = 17;
   /** RegularExpression Id. */
-  int IF = 25;
+  int PUT = 18;
   /** RegularExpression Id. */
-  int THEN = 26;
+  int IF = 19;
   /** RegularExpression Id. */
-  int ELSE = 27;
+  int THEN = 20;
   /** RegularExpression Id. */
-  int TRUE = 28;
+  int ELSE = 21;
   /** RegularExpression Id. */
-  int FALSE = 29;
+  int TRUE = 22;
   /** RegularExpression Id. */
-  int WHILE = 30;
+  int FALSE = 23;
   /** RegularExpression Id. */
-  int ABRE_PARENTESES = 31;
+  int WHILE = 24;
   /** RegularExpression Id. */
-  int FECHA_PARENTESES = 32;
+  int ABRE_PARENTESES = 25;
   /** RegularExpression Id. */
-  int PONTO = 33;
+  int FECHA_PARENTESES = 26;
   /** RegularExpression Id. */
-  int VIRGULA = 34;
+  int PONTO = 27;
   /** RegularExpression Id. */
-  int DOISPONTOS = 35;
+  int VIRGULA = 28;
   /** RegularExpression Id. */
-  int ATRIBUICAO = 36;
+  int DOISPONTOS = 29;
   /** RegularExpression Id. */
-  int PONTOVIRGULA = 37;
+  int ATRIBUICAO = 30;
   /** RegularExpression Id. */
-  int ADICAO = 38;
+  int PONTOVIRGULA = 31;
   /** RegularExpression Id. */
-  int SUBTRACAO = 39;
+  int ADICAO = 32;
   /** RegularExpression Id. */
-  int MULTIPLICACAO = 40;
+  int SUBTRACAO = 33;
   /** RegularExpression Id. */
-  int DIVISAO = 41;
+  int MULTIPLICACAO = 34;
   /** RegularExpression Id. */
-  int POTENCIA = 42;
+  int DIVISAO = 35;
   /** RegularExpression Id. */
-  int DIVISAO_INTEIRA = 43;
+  int POTENCIA = 36;
   /** RegularExpression Id. */
-  int RESTO = 44;
+  int DIVISAO_INTEIRA = 37;
   /** RegularExpression Id. */
-  int IGUAL = 45;
+  int RESTO = 38;
   /** RegularExpression Id. */
-  int DIFERENTE = 46;
+  int IGUAL = 39;
   /** RegularExpression Id. */
-  int MENOR = 47;
+  int DIFERENTE = 40;
   /** RegularExpression Id. */
-  int MAIOR = 48;
+  int MENOR = 41;
   /** RegularExpression Id. */
-  int MENOR_IGUAL = 49;
+  int MAIOR = 42;
   /** RegularExpression Id. */
-  int MAIOR_IGUAL = 50;
+  int MENOR_IGUAL = 43;
   /** RegularExpression Id. */
-  int E = 51;
+  int MAIOR_IGUAL = 44;
   /** RegularExpression Id. */
-  int OU = 52;
+  int E = 45;
   /** RegularExpression Id. */
-  int NAO = 53;
+  int OU = 46;
   /** RegularExpression Id. */
-  int DIGITO = 54;
+  int NAO = 47;
   /** RegularExpression Id. */
-  int CONSTANTE_INTEIRA = 55;
+  int DIGITO = 48;
   /** RegularExpression Id. */
-  int CONSTANTE_REAL = 56;
+  int CONSTANTE_INTEIRA = 49;
   /** RegularExpression Id. */
-  int CONSTANTE_LITERAL = 57;
+  int CONSTANTE_REAL = 50;
   /** RegularExpression Id. */
-  int LETRA = 58;
+  int CONSTANTE_LITERAL = 51;
   /** RegularExpression Id. */
-  int IDENTIFICADOR = 59;
+  int LETRA = 52;
   /** RegularExpression Id. */
-  int SIMBOLO_INVALIDO = 60;
+  int IDENTIFICADOR = 53;
   /** RegularExpression Id. */
-  int CONSTANTE_INTEIRA_INVALIDA = 61;
+  int SIMBOLO_INVALIDO = 54;
   /** RegularExpression Id. */
-  int CONSTANTE_REAL_INVALIDA = 62;
+  int CONSTANTE_INTEIRA_INVALIDA = 55;
   /** RegularExpression Id. */
-  int CONSTANTE_LITERAL_INVALIDA = 63;
+  int CONSTANTE_REAL_INVALIDA = 56;
   /** RegularExpression Id. */
-  int IDENTIFICADOR_INVALIDO = 64;
+  int CONSTANTE_LITERAL_INVALIDA = 57;
+  /** RegularExpression Id. */
+  int IDENTIFICADOR_INVALIDO = 58;
 
   /** Lexical state. */
   int DEFAULT = 0;
@@ -123,19 +125,13 @@ public interface LanguageParserConstants {
   /** Literal token values. */
   String[] tokenImage = {
     "<EOF>",
-    "\" \"",
-    "\"\\t\"",
-    "\"\\n\"",
-    "\"\\r\"",
-    "\"\\f\"",
-    "\"\\r\\n\"",
-    "\"\\n\\r\"",
+    "<NovaLinha>",
     "\"//\"",
-    "<token of kind 9>",
-    "<token of kind 10>",
+    "<token of kind 3>",
+    "<token of kind 4>",
     "\"/*\"",
     "\"*/\"",
-    "<token of kind 13>",
+    "<token of kind 7>",
     "\"do\"",
     "\"make\"",
     "\"end\"",

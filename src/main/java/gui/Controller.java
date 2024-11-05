@@ -28,6 +28,7 @@ public class Controller {
     private static boolean hasOpenFile = false;
     @FXML
     private Stage stage;
+    
     public CodeArea inputTextArea;
     public TextArea messageTextArea;
     public Label statusBar, lineColLabel;
@@ -38,6 +39,9 @@ public class Controller {
     public Button newBtn, openBtn, saveBtn;
     public Button copyBtn, cutBtn, pasteBtn;
     public Button buildBtn, runBtn;
+
+    @FXML
+    private TextArea outputArea;
 
     @FXML
     public void openFileDialog(ActionEvent actionEvent) {
@@ -275,11 +279,16 @@ public class Controller {
         if (this.inputTextArea.getText().length() == 0) {
             return;
         }
+    
+        // Realiza a análise léxica
         analisadorLexico();
-
+    
+        // Verifica se há erros léxicos
         if (hasLexicalErrors()) {
             return;
         }
+    
+        // Realiza a análise sintática e exibe os resultados
         analisadorSintatico();
     }
 
@@ -289,55 +298,53 @@ public class Controller {
         return messageContent.contains("Erro:"); // ou alguma outra lógica que você utiliza para detectar erros
     }
 
+    private void analisadorLexico() {
+        this.messageTextArea.clear();
+        ArrayList<Token> tokens = (ArrayList<Token>) LanguageParser.getTokens(this.inputTextArea.getText());
+        int counter = 0;
+        for (Token token : tokens) {
+            if (token.kind == LanguageParserConstants.SIMBOLO_INVALIDO || token.kind == LanguageParserConstants.CONSTANTE_INTEIRA_INVALIDA
+                    || token.kind == LanguageParserConstants.CONSTANTE_REAL_INVALIDA || token.kind == LanguageParserConstants.CONSTANTE_LITERAL_INVALIDA || token.kind == LanguageParserConstants.IDENTIFICADOR_INVALIDO) {
+                counter++;
+                switch (token.kind) {
+                    case 60:
+                        this.messageTextArea.appendText("\n|Erro: " + token.kind + " - Simbolo Invalido, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
+                        break;
+                    case 61:
+                        this.messageTextArea.appendText("\n|Erro: " + token.kind + " - Constante Inteira Invalida, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
+                        break;
+                    case 62:
+                        this.messageTextArea.appendText("\n|Erro: " + token.kind + " - Constante Real Invalida, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
+                        break;
+                    case 63:
+                        this.messageTextArea.appendText("\n|Erro: " + token.kind + " - Constante Literal Invalida, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
+                        break;
+                    case 64:
+                        this.messageTextArea.appendText("\n|Erro: " + token.kind + " - Identificador Invalido, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
+                        break;
+                }
+            }
+        }
+        this.messageTextArea.appendText("\nErro(s) lexicos encontrados: " + counter);
+        if (counter == 0) {
+            this.messageTextArea.appendText("0\n");
+        }
+        this.messageTextArea.appendText("\n--------------------------");
+    }
 
-    private void analisadorSintatico(){
+    private void analisadorSintatico() {
         ArrayList<AErrorStruct> output = LanguageParser.analisadorSintatico(this.inputTextArea.getText());
         if (output.size() == 0) {
             this.messageTextArea.appendText("Compilado com sucesso!\n");
             return;
         }
         this.messageTextArea.appendText("\n");
-        this.messageTextArea.appendText("Erro(s) sintaticos encontrados :"+output.size() + "\n");
-        for (AErrorStruct err: output){
-            this.messageTextArea.appendText(err.getMsg());
-            this.messageTextArea.appendText("Esperado(s):" + err.expected());
-            this.messageTextArea.appendText("Linha: " + err.getError().currentToken.beginLine);
-            this.messageTextArea.appendText("; Coluna: " + err.getError().currentToken.endColumn + "\n");
+        this.messageTextArea.appendText("Erro(s) sintaticos encontrados: " + output.size() + "\n");
+        for (AErrorStruct err : output) {
+            this.messageTextArea.appendText(err.getMsg() + "\n");
+            this.messageTextArea.appendText("Esperado(s): " + err.expected() + "\n");
+            this.messageTextArea.appendText("Linha: " + err.getError().currentToken.beginLine + "; Coluna: " + err.getError().currentToken.endColumn + "\n");
         }
-    }
-
-    private void analisadorLexico(){
-        this.messageTextArea.clear();
-        ArrayList<Token> tokens = (ArrayList<Token>) LanguageParser.getTokens(this.inputTextArea.getText());
-        int counter = 0;
-        for (Token token : tokens) {
-            if (token.kind == LanguageParserConstants.SIMBOLO_INVALIDO | token.kind == LanguageParserConstants.CONSTANTE_INTEIRA_INVALIDA
-            | token.kind == LanguageParserConstants.CONSTANTE_REAL_INVALIDA | token.kind == LanguageParserConstants.CONSTANTE_LITERAL_INVALIDA | token.kind == LanguageParserConstants.IDENTIFICADOR_INVALIDO) {
-                counter++;
-                switch (token.kind) {
-                    case 60:
-                        this.messageTextArea.appendText("\n|Erro: "+token.kind+ " - Simbolo Invalido, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
-                        break;
-                    case 61:
-                        this.messageTextArea.appendText("\n|Erro: "+token.kind+ " - Constante Inteira Invalida, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
-                        break;
-                    case 62:
-                        this.messageTextArea.appendText("\n|Erro: "+token.kind+ " - Constante Real Invalida, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
-                        break;
-                    case 63:
-                        this.messageTextArea.appendText("\n|Erro: "+token.kind+ " - Constante Literal Invalida, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
-                        break;
-                    case 64:
-                        this.messageTextArea.appendText("\n|Erro: "+token.kind+ " - Identificador Invalido, linha: " + token.beginLine + "- coluna: " + token.endColumn + "|");
-                        break;
-                }
-            }
-        }
-        this.messageTextArea.appendText("\nErro(s) lexicos encontrados: " + counter);
-        if (counter == 0){
-            this.messageTextArea.appendText("0\n");
-        }
-        this.messageTextArea.appendText("\n--------------------------");
     }
 
     public String copySelection() {

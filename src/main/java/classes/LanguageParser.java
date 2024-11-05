@@ -20,23 +20,55 @@ public class LanguageParser implements LanguageParserConstants {
         return tokenize(parser);
     }
 
-    public static ArrayList<AErrorStruct> analisadorSintatico(String stream) {
-        InputStream target = new ByteArrayInputStream(stream.getBytes());
-        LanguageParser parser = new LanguageParser(target);
-        while (true) {
-            try {
-                parser.programa();
-                break; // Saia do loop se a análise for bem-sucedida
-            } catch (ParseException e) {
-                output.add(new AErrorStruct("Erro parsing programa.\n", e));
-                parser.contParseError++;
-                // Continue a análise mesmo após encontrar um erro
-            }
-        }
-        ArrayList<AErrorStruct> tmp = new ArrayList<AErrorStruct>(output);
-        output.clear();
-        return tmp;
+    public static ArrayList<AErrorStruct> analisadorSintatico(String input) {
+      ArrayList<AErrorStruct> output = new ArrayList<>();
+      LanguageParser parser = create(input);
+      int maxAttempts = 100; // Limite de tentativas para evitar loop infinito
+      int attempts = 0;
+
+      while (attempts < maxAttempts) {
+          try {
+              parser.programa();
+              break; // Saia do loop se a análise for bem-sucedida
+          } catch (ParseException e) {
+              output.add(new AErrorStruct("Erro parsing programa.\n", e));
+              parser.advanceAfterError(); // Avance no fluxo de entrada após encontrar um erro
+              attempts++;
+          }
+      }
+
+      if (attempts >= maxAttempts) {
+          output.add(new AErrorStruct("Erro: Limite de tentativas atingido ao tentar avan\u00e7ar ap\u00f3s erro.", null));
+      }
+
+      return output;
     }
+
+    private void advanceAfterError() {
+      int maxAttempts = 100; // Limite de tentativas para evitar loop infinito
+      int attempts = 0;
+  
+      while (attempts < maxAttempts) {
+          try {
+              Token token = getNextToken();
+              System.out.println("Consumed token: " + token); // Adicione esta linha para depuração
+              if (token.kind == LanguageParserConstants.EOF || isSafePoint(token)) {
+                  break;
+              }
+          } catch (Exception e) {
+              break;
+          }
+          attempts++;
+      }
+  
+      if (attempts >= maxAttempts) {
+          System.err.println("Erro: Limite de tentativas atingido ao tentar avançar após erro.");
+      }
+  }
+  
+  private boolean isSafePoint(Token token) {
+      return token.kind == LanguageParserConstants.PONTOVIRGULA || token.kind == LanguageParserConstants.FECHA_PARENTESES || token.kind == LanguageParserConstants.EOF || token.kind == LanguageParserConstants.END || token.kind == LanguageParserConstants.PONTO;
+  }
 
     public static LanguageParser create(String stream) {
         InputStream target = new ByteArrayInputStream(stream.getBytes());
@@ -51,7 +83,7 @@ public class LanguageParser implements LanguageParserConstants {
             try {
                 parser = new LanguageParser(new java.io.FileInputStream(args[0]));
             } catch (java.io.FileNotFoundException e) {
-                System.out.println("LanguageParser: file " + args[0] + " was not found.");
+                System.out.println("LanguageParser: file " + args[0] + " was NAO found.");
                 return;
             }
         }
@@ -78,7 +110,7 @@ public class LanguageParser implements LanguageParserConstants {
         try {
             s = s.substring(1, k);
         } catch (StringIndexOutOfBoundsException e) {
-            // Handle exception or log if necessary
+            // Handle exception OU log if necessary
         }
         return s;
     }
@@ -109,7 +141,7 @@ public class LanguageParser implements LanguageParserConstants {
     try {
 
       jj_consume_token(MAKE);
-      identificador();
+      identificador_do_programa();
       declaracao_constantes_variaveis();
       lista_comandos();
       jj_consume_token(END);
@@ -119,33 +151,70 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <declaracao de constantes ou variaveis> ::= <declaracao de constante> | <declaracao de variavel> | £
+  final public void identificador_do_programa() throws ParseException {
+    trace_call("identificador_do_programa");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case IDENTIFICADOR:{
+        identificador();
+        break;
+        }
+      default:
+        jj_la1[0] = jj_gen;
+        ;
+      }
+    } finally {
+      trace_return("identificador_do_programa");
+    }
+}
+
   final public void declaracao_constantes_variaveis() throws ParseException {
     trace_call("declaracao_constantes_variaveis");
     try {
 
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case CONST:{
-        declaracao_constante();
-        break;
-        }
+      case CONST:
       case VAR:{
-        declaracao_variavel();
+        constantes_e_variaveis();
         break;
         }
       default:
-        jj_la1[0] = jj_gen;
-        jj_consume_token(-1);
-        throw new ParseException();
+        jj_la1[1] = jj_gen;
+        ;
       }
     } finally {
       trace_return("declaracao_constantes_variaveis");
     }
 }
 
-// <declaracao de constante> ::= const <constantes> end;
-  final public void declaracao_constante() throws ParseException {
-    trace_call("declaracao_constante");
+  final public void constantes_e_variaveis() throws ParseException {
+    trace_call("constantes_e_variaveis");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case CONST:{
+        declaracao_constantes();
+        variaveis_prime();
+        break;
+        }
+      case VAR:{
+        declaracao_variaveis();
+        constantes_prime();
+        break;
+        }
+      default:
+        jj_la1[2] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+    } finally {
+      trace_return("constantes_e_variaveis");
+    }
+}
+
+  final public void declaracao_constantes() throws ParseException {
+    trace_call("declaracao_constantes");
     try {
 
       jj_consume_token(CONST);
@@ -153,11 +222,10 @@ public class LanguageParser implements LanguageParserConstants {
       jj_consume_token(END);
       jj_consume_token(PONTOVIRGULA);
     } finally {
-      trace_return("declaracao_constante");
+      trace_return("declaracao_constantes");
     }
 }
 
-// <constantes> ::= <tipo> : <lista de identificadores> = <valor> . <constantes'>
   final public void constantes() throws ParseException {
     trace_call("constantes");
     try {
@@ -174,35 +242,97 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <valor> ::= constante inteira | constante real | constante literal
-  final public void valor() throws ParseException {
-    trace_call("valor");
+  final public void constantes_prime() throws ParseException {
+    trace_call("constantes_prime");
     try {
 
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case CONSTANTE_INTEIRA:{
-        jj_consume_token(CONSTANTE_INTEIRA);
-        break;
-        }
-      case CONSTANTE_REAL:{
-        jj_consume_token(CONSTANTE_REAL);
-        break;
-        }
-      case CONSTANTE_LITERAL:{
-        jj_consume_token(CONSTANTE_LITERAL);
+      case INT:
+      case REAL:
+      case CHAR:
+      case BOOL:{
+        constantes();
         break;
         }
       default:
-        jj_la1[1] = jj_gen;
-        jj_consume_token(-1);
-        throw new ParseException();
+        jj_la1[3] = jj_gen;
+        ;
       }
     } finally {
-      trace_return("valor");
+      trace_return("constantes_prime");
     }
 }
 
-// <tipo> ::= int | real | char
+  final public void variaveis_prime() throws ParseException {
+    trace_call("variaveis_prime");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case CONST:{
+        declaracao_constantes();
+        break;
+        }
+      default:
+        jj_la1[4] = jj_gen;
+        ;
+      }
+    } finally {
+      trace_return("variaveis_prime");
+    }
+}
+
+  final public void declaracao_variaveis() throws ParseException {
+    trace_call("declaracao_variaveis");
+    try {
+
+      jj_consume_token(VAR);
+      variaveis();
+      jj_consume_token(END);
+      jj_consume_token(PONTOVIRGULA);
+    } finally {
+      trace_return("declaracao_variaveis");
+    }
+}
+
+  final public void variaveis() throws ParseException {
+    trace_call("variaveis");
+    try {
+
+      tipo();
+      jj_consume_token(DOISPONTOS);
+      lista_identificadores();
+      jj_consume_token(PONTO);
+      variaveis_lista();
+    } finally {
+      trace_return("variaveis");
+    }
+}
+
+  final public void variaveis_lista() throws ParseException {
+    trace_call("variaveis_lista");
+    try {
+
+      label_1:
+      while (true) {
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case INT:
+        case REAL:
+        case CHAR:
+        case BOOL:{
+          ;
+          break;
+          }
+        default:
+          jj_la1[5] = jj_gen;
+          break label_1;
+        }
+        variaveis();
+      }
+    } finally {
+      trace_return("variaveis_lista");
+    }
+}
+
   final public void tipo() throws ParseException {
     trace_call("tipo");
     try {
@@ -220,8 +350,12 @@ public class LanguageParser implements LanguageParserConstants {
         jj_consume_token(CHAR);
         break;
         }
+      case BOOL:{
+        jj_consume_token(BOOL);
+        break;
+        }
       default:
-        jj_la1[2] = jj_gen;
+        jj_la1[6] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -230,7 +364,6 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <lista de identificadores> ::= identificador <lista de identificadores'>
   final public void lista_identificadores() throws ParseException {
     trace_call("lista_identificadores");
     try {
@@ -242,7 +375,6 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <lista de identificadores'> ::= , identificador <lista de identificadores'> | £
   final public void lista_identificadores_prime() throws ParseException {
     trace_call("lista_identificadores_prime");
     try {
@@ -250,12 +382,11 @@ public class LanguageParser implements LanguageParserConstants {
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
       case VIRGULA:{
         jj_consume_token(VIRGULA);
-        identificador();
-        lista_identificadores_prime();
+        lista_identificadores();
         break;
         }
       default:
-        jj_la1[3] = jj_gen;
+        jj_la1[7] = jj_gen;
         ;
       }
     } finally {
@@ -263,117 +394,18 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <constantes'> ::= <constantes> | £
-  final public void constantes_prime() throws ParseException {
-    trace_call("constantes_prime");
-    try {
-
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case INT:
-      case REAL:
-      case CHAR:{
-        constantes();
-        break;
-        }
-      default:
-        jj_la1[4] = jj_gen;
-        ;
-      }
-    } finally {
-      trace_return("constantes_prime");
-    }
-}
-
-// <declaracao de variavel> ::= var <variaveis> end;
-  final public void declaracao_variavel() throws ParseException {
-    trace_call("declaracao_variavel");
-    try {
-
-      jj_consume_token(VAR);
-      variaveis();
-      jj_consume_token(END);
-      jj_consume_token(PONTOVIRGULA);
-    } finally {
-      trace_return("declaracao_variavel");
-    }
-}
-
-// <variaveis> ::= <tipo'> : <lista de identificadores>.<variavel>
-  final public void variaveis() throws ParseException {
-    trace_call("variaveis");
-    try {
-
-      tipo_prime();
-      jj_consume_token(DOISPONTOS);
-      lista_identificadores();
-      jj_consume_token(PONTO);
-      variavel();
-    } finally {
-      trace_return("variaveis");
-    }
-}
-
-// <variavel> ::= <variaveis> | £
-  final public void variavel() throws ParseException {
-    trace_call("variavel");
-    try {
-
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case INT:
-      case REAL:
-      case CHAR:
-      case BOOL:{
-        variaveis();
-        break;
-        }
-      default:
-        jj_la1[5] = jj_gen;
-        ;
-      }
-    } finally {
-      trace_return("variavel");
-    }
-}
-
-// <tipo'> ::= <tipo> | bool
-  final public void tipo_prime() throws ParseException {
-    trace_call("tipo_prime");
-    try {
-
-      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case INT:
-      case REAL:
-      case CHAR:{
-        tipo();
-        break;
-        }
-      case BOOL:{
-        jj_consume_token(BOOL);
-        break;
-        }
-      default:
-        jj_la1[6] = jj_gen;
-        jj_consume_token(-1);
-        throw new ParseException();
-      }
-    } finally {
-      trace_return("tipo_prime");
-    }
-}
-
-// <lista de comandos> ::= <comando> <lista de comandos'>
   final public void lista_comandos() throws ParseException {
     trace_call("lista_comandos");
     try {
 
       comando();
+      jj_consume_token(PONTO);
       lista_comandos_prime();
     } finally {
       trace_return("lista_comandos");
     }
 }
 
-// <lista de comandos'> ::= <lista de comandos> | £
   final public void lista_comandos_prime() throws ParseException {
     trace_call("lista_comandos_prime");
     try {
@@ -382,11 +414,11 @@ public class LanguageParser implements LanguageParserConstants {
       case GET:
       case PUT:
       case IF:
+      case TRUE:
+      case FALSE:
       case WHILE:
-      case ADICAO:
-      case SUBTRACAO:
-      case MULTIPLICACAO:
-      case DIVISAO:
+      case ABRE_PARENTESES:
+      case NAO:
       case CONSTANTE_INTEIRA:
       case CONSTANTE_REAL:
       case CONSTANTE_LITERAL:
@@ -395,7 +427,7 @@ public class LanguageParser implements LanguageParserConstants {
         break;
         }
       default:
-        jj_la1[7] = jj_gen;
+        jj_la1[8] = jj_gen;
         ;
       }
     } finally {
@@ -403,16 +435,15 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <comando> ::= <atribuicao> | <entrada> | <saida> | <selecao> | <repeticao>
   final public void comando() throws ParseException {
     trace_call("comando");
     try {
 
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case ADICAO:
-      case SUBTRACAO:
-      case MULTIPLICACAO:
-      case DIVISAO:
+      case TRUE:
+      case FALSE:
+      case ABRE_PARENTESES:
+      case NAO:
       case CONSTANTE_INTEIRA:
       case CONSTANTE_REAL:
       case CONSTANTE_LITERAL:
@@ -437,7 +468,7 @@ public class LanguageParser implements LanguageParserConstants {
         break;
         }
       default:
-        jj_la1[8] = jj_gen;
+        jj_la1[9] = jj_gen;
         jj_consume_token(-1);
         throw new ParseException();
       }
@@ -446,7 +477,6 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <atribuicao> ::= <expressao> -> identificador.
   final public void atribuicao() throws ParseException {
     trace_call("atribuicao");
     try {
@@ -454,13 +484,156 @@ public class LanguageParser implements LanguageParserConstants {
       expressao();
       jj_consume_token(ATRIBUICAO);
       identificador();
-      jj_consume_token(PONTO);
     } finally {
       trace_return("atribuicao");
     }
 }
 
-// <expressao> ::= <expressao aritmética ou lógica> <expressao'>
+  final public void entrada() throws ParseException {
+    trace_call("entrada");
+    try {
+
+      jj_consume_token(GET);
+      jj_consume_token(ABRE_PARENTESES);
+      lista_identificadores();
+      jj_consume_token(FECHA_PARENTESES);
+    } finally {
+      trace_return("entrada");
+    }
+}
+
+  final public void saida() throws ParseException {
+    trace_call("saida");
+    try {
+
+      jj_consume_token(PUT);
+      jj_consume_token(ABRE_PARENTESES);
+      lista_identificadores_e_ou_constantes();
+      jj_consume_token(FECHA_PARENTESES);
+    } finally {
+      trace_return("saida");
+    }
+}
+
+  final public void lista_identificadores_e_ou_constantes() throws ParseException {
+    trace_call("lista_identificadores_e_ou_constantes");
+    try {
+
+      item();
+      lista_identificadores_e_ou_constantes_prime();
+    } finally {
+      trace_return("lista_identificadores_e_ou_constantes");
+    }
+}
+
+  final public void lista_identificadores_e_ou_constantes_prime() throws ParseException {
+    trace_call("lista_identificadores_e_ou_constantes_prime");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case VIRGULA:{
+        jj_consume_token(VIRGULA);
+        lista_identificadores_e_ou_constantes();
+        break;
+        }
+      default:
+        jj_la1[10] = jj_gen;
+        ;
+      }
+    } finally {
+      trace_return("lista_identificadores_e_ou_constantes_prime");
+    }
+}
+
+  final public void item() throws ParseException {
+    trace_call("item");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case IDENTIFICADOR:{
+        identificador();
+        break;
+        }
+      case CONSTANTE_INTEIRA:{
+        jj_consume_token(CONSTANTE_INTEIRA);
+        break;
+        }
+      case CONSTANTE_REAL:{
+        jj_consume_token(CONSTANTE_REAL);
+        break;
+        }
+      case CONSTANTE_LITERAL:{
+        jj_consume_token(CONSTANTE_LITERAL);
+        break;
+        }
+      case TRUE:{
+        jj_consume_token(TRUE);
+        break;
+        }
+      case FALSE:{
+        jj_consume_token(FALSE);
+        break;
+        }
+      default:
+        jj_la1[11] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+    } finally {
+      trace_return("item");
+    }
+}
+
+  final public void selecao() throws ParseException {
+    trace_call("selecao");
+    try {
+
+      jj_consume_token(IF);
+      expressao();
+      jj_consume_token(THEN);
+      lista_comandos();
+      senao();
+      jj_consume_token(END);
+      jj_consume_token(PONTO);
+    } finally {
+      trace_return("selecao");
+    }
+}
+
+  final public void senao() throws ParseException {
+    trace_call("senao");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case ELSE:{
+        jj_consume_token(ELSE);
+        lista_comandos();
+        break;
+        }
+      default:
+        jj_la1[12] = jj_gen;
+        ;
+      }
+    } finally {
+      trace_return("senao");
+    }
+}
+
+  final public void repeticao() throws ParseException {
+    trace_call("repeticao");
+    try {
+
+      jj_consume_token(WHILE);
+      expressao();
+      jj_consume_token(DO);
+      lista_comandos();
+      jj_consume_token(END);
+      jj_consume_token(PONTO);
+    } finally {
+      trace_return("repeticao");
+    }
+}
+
   final public void expressao() throws ParseException {
     trace_call("expressao");
     try {
@@ -472,7 +645,6 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <expressao'> ::= = <expressao aritmética ou lógica> | <> <expressao aritmética ou lógica> | < | > | <= | >= | £
   final public void expressao_prime() throws ParseException {
     trace_call("expressao_prime");
     try {
@@ -516,14 +688,14 @@ public class LanguageParser implements LanguageParserConstants {
           break;
           }
         default:
-          jj_la1[9] = jj_gen;
+          jj_la1[13] = jj_gen;
           jj_consume_token(-1);
           throw new ParseException();
         }
         break;
         }
       default:
-        jj_la1[10] = jj_gen;
+        jj_la1[14] = jj_gen;
         ;
       }
     } finally {
@@ -531,175 +703,253 @@ public class LanguageParser implements LanguageParserConstants {
     }
 }
 
-// <expressao aritmética ou lógica> ::= <termo> <lista de termos>
   final public void expressao_aritmetica_ou_logica() throws ParseException {
     trace_call("expressao_aritmetica_ou_logica");
     try {
 
-      termo();
-      lista_termos();
+      termo2();
+      menor_prioridade();
     } finally {
       trace_return("expressao_aritmetica_ou_logica");
     }
 }
 
-// <lista de termos> ::= <operação> <termo> <lista de termos> | £
-  final public void lista_termos() throws ParseException {
-    trace_call("lista_termos");
-    try {
-
-      operacao();
-      termo();
-      lista_termos();
-    } finally {
-      trace_return("lista_termos");
-    }
-}
-
-// <termo> ::= <fator> <lista de fatores>
-  final public void termo() throws ParseException {
-    trace_call("termo");
-    try {
-
-      fator();
-      lista_fatores();
-    } finally {
-      trace_return("termo");
-    }
-}
-
-// <lista de fatores> ::= <operacao> <fator> <lista de fatores> | £
-  final public void lista_fatores() throws ParseException {
-    trace_call("lista_fatores");
-    try {
-
-      fator();
-      operacao();
-      fator();
-    } finally {
-      trace_return("lista_fatores");
-    }
-}
-
-// <fator> ::= identificador | constante
-  final public void fator() throws ParseException {
-    trace_call("fator");
-    try {
-
-      identificador();
-    } finally {
-      trace_return("fator");
-    }
-}
-
-// <operacao> ::= + | - | * | /
-  final public void operacao() throws ParseException {
-    trace_call("operacao");
+  final public void menor_prioridade() throws ParseException {
+    trace_call("menor_prioridade");
     try {
 
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
-      case ADICAO:{
-        jj_consume_token(ADICAO);
-        break;
+      case ADICAO:
+      case SUBTRACAO:
+      case OU:{
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case ADICAO:{
+          jj_consume_token(ADICAO);
+          termo2();
+          menor_prioridade();
+          break;
+          }
+        case SUBTRACAO:{
+          jj_consume_token(SUBTRACAO);
+          termo2();
+          menor_prioridade();
+          break;
+          }
+        case OU:{
+          jj_consume_token(OU);
+          termo2();
+          menor_prioridade();
+          break;
+          }
+        default:
+          jj_la1[15] = jj_gen;
+          jj_consume_token(-1);
+          throw new ParseException();
         }
-      case SUBTRACAO:{
-        jj_consume_token(SUBTRACAO);
-        break;
-        }
-      case MULTIPLICACAO:{
-        jj_consume_token(MULTIPLICACAO);
-        break;
-        }
-      case DIVISAO:{
-        jj_consume_token(DIVISAO);
         break;
         }
       default:
-        jj_la1[11] = jj_gen;
-        jj_consume_token(-1);
-        throw new ParseException();
+        jj_la1[16] = jj_gen;
+        ;
       }
     } finally {
-      trace_return("operacao");
+      trace_return("menor_prioridade");
     }
 }
 
-// <entrada> ::= read identificador.
-  final public void entrada() throws ParseException {
-    trace_call("entrada");
+  final public void termo2() throws ParseException {
+    trace_call("termo2");
     try {
 
-      jj_consume_token(GET);
-      identificador();
-      jj_consume_token(PONTO);
+      termo1();
+      media_prioridade();
     } finally {
-      trace_return("entrada");
+      trace_return("termo2");
     }
 }
 
-// <saida> ::= write <valor>.
-  final public void saida() throws ParseException {
-    trace_call("saida");
+  final public void media_prioridade() throws ParseException {
+    trace_call("media_prioridade");
     try {
 
-      jj_consume_token(PUT);
-      valor();
-      jj_consume_token(PONTO);
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case MULTIPLICACAO:
+      case DIVISAO:
+      case DIVISAO_INTEIRA:
+      case RESTO:
+      case E:{
+        switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+        case MULTIPLICACAO:{
+          jj_consume_token(MULTIPLICACAO);
+          termo1();
+          media_prioridade();
+          break;
+          }
+        case DIVISAO:{
+          jj_consume_token(DIVISAO);
+          termo1();
+          media_prioridade();
+          break;
+          }
+        case DIVISAO_INTEIRA:{
+          jj_consume_token(DIVISAO_INTEIRA);
+          termo1();
+          media_prioridade();
+          break;
+          }
+        case RESTO:{
+          jj_consume_token(RESTO);
+          termo1();
+          media_prioridade();
+          break;
+          }
+        case E:{
+          jj_consume_token(E);
+          termo1();
+          media_prioridade();
+          break;
+          }
+        default:
+          jj_la1[17] = jj_gen;
+          jj_consume_token(-1);
+          throw new ParseException();
+        }
+        break;
+        }
+      default:
+        jj_la1[18] = jj_gen;
+        ;
+      }
     } finally {
-      trace_return("saida");
+      trace_return("media_prioridade");
     }
 }
 
-// <selecao> ::= if <expressao> then <lista de comandos> else <lista de comandos> end.
-  final public void selecao() throws ParseException {
-    trace_call("selecao");
+  final public void termo1() throws ParseException {
+    trace_call("termo1");
     try {
 
-      jj_consume_token(IF);
-      expressao();
-      jj_consume_token(THEN);
-      lista_comandos();
-      jj_consume_token(ELSE);
-      lista_comandos();
-      jj_consume_token(END);
-      jj_consume_token(PONTO);
+      elemento();
+      maior_prioridade();
     } finally {
-      trace_return("selecao");
+      trace_return("termo1");
     }
 }
 
-// <repeticao> ::= while <expressao> do <lista de comandos> end.
-  final public void repeticao() throws ParseException {
-    trace_call("repeticao");
+  final public void maior_prioridade() throws ParseException {
+    trace_call("maior_prioridade");
     try {
 
-      jj_consume_token(WHILE);
-      expressao();
-      jj_consume_token(DO);
-      lista_comandos();
-      jj_consume_token(END);
-      jj_consume_token(PONTO);
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case POTENCIA:{
+        jj_consume_token(POTENCIA);
+        elemento();
+        maior_prioridade();
+        break;
+        }
+      default:
+        jj_la1[19] = jj_gen;
+        ;
+      }
     } finally {
-      trace_return("repeticao");
+      trace_return("maior_prioridade");
     }
 }
 
-// <identificador> ::= <LETTER> (<LETTER> | <DIGIT>)*
-  final public void identificador() throws ParseException {
-    trace_call("identificador");
+  final public void elemento() throws ParseException {
+    trace_call("elemento");
     try {
 
       switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
       case IDENTIFICADOR:{
-        jj_consume_token(IDENTIFICADOR);
+        identificador();
+        break;
+        }
+      case CONSTANTE_INTEIRA:{
+        jj_consume_token(CONSTANTE_INTEIRA);
+        break;
+        }
+      case CONSTANTE_REAL:{
+        jj_consume_token(CONSTANTE_REAL);
+        break;
+        }
+      case CONSTANTE_LITERAL:{
+        jj_consume_token(CONSTANTE_LITERAL);
+        break;
+        }
+      case TRUE:{
+        jj_consume_token(TRUE);
+        break;
+        }
+      case FALSE:{
+        jj_consume_token(FALSE);
+        break;
+        }
+      case ABRE_PARENTESES:{
+        jj_consume_token(ABRE_PARENTESES);
+        expressao();
+        jj_consume_token(FECHA_PARENTESES);
+        break;
+        }
+      case NAO:{
+        jj_consume_token(NAO);
+        jj_consume_token(ABRE_PARENTESES);
+        expressao();
+        jj_consume_token(FECHA_PARENTESES);
         break;
         }
       default:
-        jj_la1[12] = jj_gen;
-        ;
+        jj_la1[20] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
       }
     } finally {
+      trace_return("elemento");
+    }
+}
+
+  final public void identificador() throws ParseException {
+    trace_call("identificador");
+    try {
+
+      jj_consume_token(IDENTIFICADOR);
+    } finally {
       trace_return("identificador");
+    }
+}
+
+  final public void valor() throws ParseException {
+    trace_call("valor");
+    try {
+
+      switch ((jj_ntk==-1)?jj_ntk_f():jj_ntk) {
+      case CONSTANTE_INTEIRA:{
+        jj_consume_token(CONSTANTE_INTEIRA);
+        break;
+        }
+      case CONSTANTE_REAL:{
+        jj_consume_token(CONSTANTE_REAL);
+        break;
+        }
+      case CONSTANTE_LITERAL:{
+        jj_consume_token(CONSTANTE_LITERAL);
+        break;
+        }
+      case TRUE:{
+        jj_consume_token(TRUE);
+        break;
+        }
+      case FALSE:{
+        jj_consume_token(FALSE);
+        break;
+        }
+      default:
+        jj_la1[21] = jj_gen;
+        jj_consume_token(-1);
+        throw new ParseException();
+      }
+    } finally {
+      trace_return("valor");
     }
 }
 
@@ -712,23 +962,18 @@ public class LanguageParser implements LanguageParserConstants {
   public Token jj_nt;
   private int jj_ntk;
   private int jj_gen;
-  final private int[] jj_la1 = new int[13];
+  final private int[] jj_la1 = new int[22];
   static private int[] jj_la1_0;
   static private int[] jj_la1_1;
-  static private int[] jj_la1_2;
   static {
 	   jj_la1_init_0();
 	   jj_la1_init_1();
-	   jj_la1_init_2();
 	}
 	private static void jj_la1_init_0() {
-	   jj_la1_0 = new int[] {0x60000,0x0,0x380000,0x0,0x380000,0x780000,0x780000,0x43800000,0x43800000,0x0,0x0,0x0,0x0,};
+	   jj_la1_0 = new int[] {0x0,0x1800,0x1800,0x1e000,0x800,0x1e000,0x1e000,0x10000000,0x3ce0000,0x3ce0000,0x10000000,0xc00000,0x200000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x2c00000,0xc00000,};
 	}
 	private static void jj_la1_init_1() {
-	   jj_la1_1 = new int[] {0x0,0x3800000,0x0,0x4,0x0,0x0,0x0,0xb8003c0,0xb8003c0,0x7e000,0x7e000,0x3c0,0x8000000,};
-	}
-	private static void jj_la1_init_2() {
-	   jj_la1_2 = new int[] {0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x0,};
+	   jj_la1_1 = new int[] {0x200000,0x0,0x0,0x0,0x0,0x0,0x0,0x0,0x2e8000,0x2e8000,0x0,0x2e0000,0x0,0x1f80,0x1f80,0x4003,0x4003,0x206c,0x206c,0x10,0x2e8000,0xe0000,};
 	}
 
   {
@@ -745,7 +990,7 @@ public class LanguageParser implements LanguageParserConstants {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 13; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -759,7 +1004,7 @@ public class LanguageParser implements LanguageParserConstants {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 13; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Constructor. */
@@ -769,7 +1014,7 @@ public class LanguageParser implements LanguageParserConstants {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 13; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -787,7 +1032,7 @@ public class LanguageParser implements LanguageParserConstants {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 13; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Constructor with generated Token Manager. */
@@ -796,7 +1041,7 @@ public class LanguageParser implements LanguageParserConstants {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 13; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   /** Reinitialise. */
@@ -805,7 +1050,7 @@ public class LanguageParser implements LanguageParserConstants {
 	 token = new Token();
 	 jj_ntk = -1;
 	 jj_gen = 0;
-	 for (int i = 0; i < 13; i++) jj_la1[i] = -1;
+	 for (int i = 0; i < 22; i++) jj_la1[i] = -1;
   }
 
   private Token jj_consume_token(int kind) throws ParseException {
@@ -858,12 +1103,12 @@ public class LanguageParser implements LanguageParserConstants {
   /** Generate ParseException. */
   public ParseException generateParseException() {
 	 jj_expentries.clear();
-	 boolean[] la1tokens = new boolean[65];
+	 boolean[] la1tokens = new boolean[59];
 	 if (jj_kind >= 0) {
 	   la1tokens[jj_kind] = true;
 	   jj_kind = -1;
 	 }
-	 for (int i = 0; i < 13; i++) {
+	 for (int i = 0; i < 22; i++) {
 	   if (jj_la1[i] == jj_gen) {
 		 for (int j = 0; j < 32; j++) {
 		   if ((jj_la1_0[i] & (1<<j)) != 0) {
@@ -872,13 +1117,10 @@ public class LanguageParser implements LanguageParserConstants {
 		   if ((jj_la1_1[i] & (1<<j)) != 0) {
 			 la1tokens[32+j] = true;
 		   }
-		   if ((jj_la1_2[i] & (1<<j)) != 0) {
-			 la1tokens[64+j] = true;
-		   }
 		 }
 	   }
 	 }
-	 for (int i = 0; i < 65; i++) {
+	 for (int i = 0; i < 59; i++) {
 	   if (la1tokens[i]) {
 		 jj_expentry = new int[1];
 		 jj_expentry[0] = i;
