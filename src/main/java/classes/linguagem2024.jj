@@ -19,7 +19,7 @@ import util.OutputData;
 public class LanguageParser {
     private int contParseError = 0;
     private boolean debugRecovery = true;
-    private final static List<ErrorStruct> output = new ArrayList<ErrorStruct>();
+    private final static List<AErrorStruct> output = new ArrayList<AErrorStruct>();
     private boolean eof;
 
     public static List<Token> getTokens(String stream) {
@@ -28,15 +28,20 @@ public class LanguageParser {
         return tokenize(parser);
     }
 
-    public static ArrayList<ErrorStruct> analisadorSintatico(String stream) {
+    public static ArrayList<AErrorStruct> analisadorSintatico(String stream) {
         InputStream target = new ByteArrayInputStream(stream.getBytes());
         LanguageParser parser = new LanguageParser(target);
-        try {
-            parser.programa();
-        } catch (ParseException e) {
-            output.add(new ErrorStruct("Error parsing the program.\n", e));
+        while (true) {
+            try {
+                parser.programa();
+                break; // Saia do loop se a análise for bem-sucedida
+            } catch (ParseException e) {
+                output.add(new AErrorStruct("Erro parsing programa.\n", e));
+                parser.contParseError++;
+                // Continue a análise mesmo após encontrar um erro
+            }
         }
-        ArrayList<ErrorStruct> tmp = new ArrayList<ErrorStruct>(output);
+        ArrayList<AErrorStruct> tmp = new ArrayList<AErrorStruct>(output);
         output.clear();
         return tmp;
     }
@@ -69,8 +74,8 @@ public class LanguageParser {
             token = parser.getNextToken();
         }
 
-        if (!TokenHandler.isClosed()) {
-            tokens.add(TokenHandler.createToken());
+        if (!ATokenHandler.isClosed()) {
+            tokens.add(ATokenHandler.createToken());
         }
         return tokens;
     }
@@ -86,7 +91,7 @@ public class LanguageParser {
         return s;
     }
 
-    public void consumeUntil(RecoverySet g, ParseException e, String met) throws ParseException {
+    public void consumeUntil(ARecoverySet g, ParseException e, String met) throws ParseException {
         Token tok;
         if (g == null) {
             throw e;

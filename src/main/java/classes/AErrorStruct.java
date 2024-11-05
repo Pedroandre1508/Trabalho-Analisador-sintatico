@@ -1,9 +1,9 @@
 package classes;
 
-public class ErrorStruct {
+public class AErrorStruct {
     private ParseException error = null;
     private String msg = null;
-    public ErrorStruct(String msg, ParseException error){
+    public AErrorStruct(String msg, ParseException error){
         this.error = error;
         this.msg = msg;
     }

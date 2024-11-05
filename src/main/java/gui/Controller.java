@@ -1,6 +1,6 @@
 package gui;
 
-import classes.ErrorStruct;
+import classes.AErrorStruct;
 import classes.LanguageParser;
 import classes.LanguageParserConstants;
 import classes.Token;
@@ -291,14 +291,14 @@ public class Controller {
 
 
     private void analisadorSintatico(){
-        ArrayList<ErrorStruct> output = LanguageParser.analisadorSintatico(this.inputTextArea.getText());
+        ArrayList<AErrorStruct> output = LanguageParser.analisadorSintatico(this.inputTextArea.getText());
         if (output.size() == 0) {
             this.messageTextArea.appendText("Compilado com sucesso!\n");
             return;
         }
         this.messageTextArea.appendText("\n");
         this.messageTextArea.appendText("Erro(s) sintaticos encontrados :"+output.size() + "\n");
-        for (ErrorStruct err: output){
+        for (AErrorStruct err: output){
             this.messageTextArea.appendText(err.getMsg());
             this.messageTextArea.appendText("Esperado(s):" + err.expected());
             this.messageTextArea.appendText("Linha: " + err.getError().currentToken.beginLine);
