@@ -1,4 +1,4 @@
-Compilador com analise lexica e sintatica desenvolvido por Katya e Pedro André - utilizando javaCC
+#Compilador com analise lexica e sintatica desenvolvido - utilizando javaCC
 
 Inicialização do programa pelo .jar
 
